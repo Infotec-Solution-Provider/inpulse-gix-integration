@@ -7,6 +7,7 @@ class ImportGixRawData {
     public async run() {
         dotenv.config();
         const importDaysInterval = Number(process.env.IMPORT_DAYS_INTERVAL || "1");
+        Log.info(`Importing data from the last ${importDaysInterval} days...`);
 
         const today = new Date();
 
@@ -17,10 +18,16 @@ class ImportGixRawData {
             const startDateString = `${startDate.getFullYear()}${String(startDate.getMonth() + 1).padStart(2, '0')}${String(startDate.getDate()).padStart(2, '0')}`;
             const endDateString = `${endDate.getFullYear()}${String(endDate.getMonth() + 1).padStart(2, '0')}${String(endDate.getDate()).padStart(2, '0')}`;
 
+            Log.info(`Importing data from ${startDateString} to ${endDateString}...`);
             await GixService.forCustomers(startDateString, endDateString, async (customer) => {
-                Log.info(`Saving customer with id: ${customer.id}...`);
-                await InpulseService.saveRawCustomer(customer);
-                Log.info(`Customer with id ${customer.id} succesfully saved.`);
+                try {
+
+                    Log.info(`Saving customer with id: ${customer.id}...`);
+                    await InpulseService.saveRawCustomer(customer);
+                    Log.info(`Customer with id ${customer.id} succesfully saved.`);
+                } catch (error: any) {
+                    Log.error(`Error saving customer with id: ${customer.id} | ${error?.message}`);
+                }
             });
 
             await GixService.forInvoices(startDateString, endDateString, async (invoice) => {

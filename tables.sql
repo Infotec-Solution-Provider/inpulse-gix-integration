@@ -146,8 +146,8 @@ CREATE TABLE gix_nf (
     rentabilidadeTotal VARCHAR(255) NOT NULL,
     codigoPedido INT(11) NOT NULL,
     PRIMARY KEY (id),
-    FOREIGN KEY (empresaNotaCodigo) REFERENCES GixInvoiceCompany(codigo),
-    FOREIGN KEY (empresaOrigemCodigo) REFERENCES GixInvoiceCompany(codigo),
-    FOREIGN KEY (clienteCodigo) REFERENCES GixInvoiceCustomer(codigo),
-    FOREIGN KEY (vendedorCodigo) REFERENCES GixInvoiceSeller(codigo)
+    FOREIGN KEY (empresaNotaCodigo) REFERENCES gix_nf_empresas(codigo),
+    FOREIGN KEY (empresaOrigemCodigo) REFERENCES gix_nf_empresas(codigo),
+    FOREIGN KEY (clienteCodigo) REFERENCES gix_nf_clientes(codigo),
+    FOREIGN KEY (vendedorCodigo) REFERENCES gix_nf_vendedores(codigo)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;

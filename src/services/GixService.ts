@@ -3,6 +3,7 @@ import axios, { AxiosInstance } from "axios";
 import { GixInvoice } from "../types/GixInvoice";
 import { GixCustomer } from "../types/GixCustomer";
 import { GixInvoiceResponse } from "../types/GixInvoiceResponse";
+import Log from '../utils/log';
 
 class GixService {
     private api: AxiosInstance;
@@ -37,29 +38,42 @@ class GixService {
 
     public async forInvoices(startDate: string, endDate: string, callback: (invoice: GixInvoice) => void) {
         let page = 1;
+        Log.info(`Fetching invoices from ${startDate} to ${endDate} | Page: ${page}...`);
         let data = await this.fetchInvoices(startDate, endDate, page);
+        Log.info(`Fetched ${data.content.length} invoices.`);
 
         while (data.lastPage === false) {
-            for (const invoice of data.content) {
-                callback(invoice);
+            for (let i = 0; i < data.content.length; i++) {
+                Log.info(`Processing invoice ${i + 1} of ${data.content.length}...`);
+                callback(data.content[i]);
             }
 
             page++;
+
+            Log.info(`Fetching invoices from ${startDate} to ${endDate} | Page: ${page}...`);
             data = await this.fetchInvoices(startDate, endDate, page);
+            Log.info(`Fetched ${data.content.length} invoices.`);
         }
     }
 
     public async forCustomers(startDate: string, endDate: string, callback: (customer: GixCustomer) => Promise<void>) {
         let page = 1;
+
+        Log.info(`Fetching customers from ${startDate} to ${endDate}... | Page: ${page}`);
         let data = await this.fetchCustomers(startDate, endDate, page);
+        Log.info(`Fetched ${data.length} customers.`);
 
         while (data.length > 0) {
-            for (const customer of data) {
-                await callback(customer);
+            for (let i = 0; i < data.length; i++) {
+                Log.info(`Processing customer ${i + 1} of ${data.length}...`);
+                await callback(data[i]);
             }
 
             page++;
+
+            Log.info(`Fetching customers from ${startDate} to ${endDate}... | Page: ${page}`);
             data = await this.fetchCustomers(startDate, endDate, page);
+            Log.info(`Fetched ${data.length} customers.`);
         }
     }
 }
