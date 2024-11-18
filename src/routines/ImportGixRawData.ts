@@ -1,9 +1,10 @@
 import GixService from "../services/GixService";
 import * as dotenv from 'dotenv';
 import InpulseService from "../services/InpulseService";
+import Log from "../utils/log";
 
-class ImportCustomersRoutine {
-    public static async run() {
+class ImportGixRawData {
+    public async run() {
         dotenv.config();
         const importDaysInterval = Number(process.env.IMPORT_DAYS_INTERVAL || "1");
 
@@ -17,14 +18,18 @@ class ImportCustomersRoutine {
             const endDateString = `${endDate.getFullYear()}${String(endDate.getMonth() + 1).padStart(2, '0')}${String(endDate.getDate()).padStart(2, '0')}`;
 
             await GixService.forCustomers(startDateString, endDateString, async (customer) => {
+                Log.info(`Saving customer with id: ${customer.id}...`);
                 await InpulseService.saveRawCustomer(customer);
+                Log.info(`Customer with id ${customer.id} succesfully saved.`);
             });
 
             await GixService.forInvoices(startDateString, endDateString, async (invoice) => {
+                Log.info(`Saving invoice with number: ${invoice.numeroNF}...`);
                 await InpulseService.saveRawInvoice(invoice);
+                Log.info(`Invoice with number ${invoice.numeroNF} succesfully saved.`);
             });
         }
     }
 }
 
-export default new ImportCustomersRoutine();
+export default new ImportGixRawData();
