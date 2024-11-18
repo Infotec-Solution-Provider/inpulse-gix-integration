@@ -1,0 +1,35 @@
+import { GixInvoiceCustomer } from "./GixInvoiceCustomer";
+import { GixInvoiceCompany } from "./GixInvoiceCompany";
+import { GixInvoiceParticipant } from "./GixInvoiceParticipant";
+import { GixInvoiceProduct } from "./GixInvoiceProduct";
+import { GixInvoiceSeller } from "./GixInvoiceSeller";
+
+export type GixInvoice = {
+  empresaNota: GixInvoiceCompany;
+  empresaOrigem: GixInvoiceCompany;
+  cliente: GixInvoiceCustomer;
+  participantes: Array<GixInvoiceParticipant>;
+  vendedor: GixInvoiceSeller;
+  produtos: Array<GixInvoiceProduct>;
+  data: string;
+  hora: string;
+  numeroNF: string;
+  serieNF: string;
+  condicaoPagamento: string;
+  descricaoCondicaoPagamento: string;
+  cartoes: string;
+  chaveNFE: string;
+  tipoNota: string;
+  valorProdutos: number;
+  valorDesconto: number;
+  valorIPI: number;
+  valorST: number;
+  valorFrete: number;
+  valorOutras: number;
+  valorSeguro: number;
+  numeroItens: number;
+  formaDePagamento: string;
+  rentabilidadeTotal: string;
+  codigoPedido: number;
+  questionarios: Array<any>;
+};
