@@ -36,7 +36,7 @@ class GixService {
         return response.data;
     }
 
-    public async forInvoices(startDate: string, endDate: string, callback: (invoice: GixInvoice) => void) {
+    public async forInvoices(startDate: string, endDate: string, callback: (invoice: GixInvoice) => Promise<void>) {
         let page = 1;
         Log.info(`Fetching invoices from ${startDate} to ${endDate} | Page: ${page}...`);
         let data = await this.fetchInvoices(startDate, endDate, page);
@@ -45,7 +45,7 @@ class GixService {
         while (data.lastPage === false) {
             for (let i = 0; i < data.content.length; i++) {
                 Log.info(`Processing invoice ${i + 1} of ${data.content.length}...`);
-                callback(data.content[i]);
+                await callback(data.content[i]);
             }
 
             page++;
