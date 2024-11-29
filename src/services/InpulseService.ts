@@ -167,7 +167,7 @@ class InpulseService {
         `;
         await connection.execute(sellerQuery, [
             seller.codigo || null,
-            seller.cnpjCpf || null,
+            seller.cnpjCpf|| null, 
             seller.nome || null,
             seller.tipo || null,
             seller.tipoDescricao || null,
@@ -182,17 +182,6 @@ class InpulseService {
         const participantQuery = `
             INSERT INTO gix_nf_participantes (tipoPessoa, cnpjCpf, cnpjCpfCliente, nome, telefone, celular, email, sexo, tipoParticipanteCodigo, tipoParticipanteDescricao)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-                tipoPessoa = VALUES(tipoPessoa),
-                cnpjCpf = VALUES(cnpjCpf),
-                cnpjCpfCliente = VALUES(cnpjCpfCliente),
-                nome = VALUES(nome),
-                telefone = VALUES(telefone),
-                celular = VALUES(celular),
-                email = VALUES(email),
-                sexo = VALUES(sexo),
-                tipoParticipanteCodigo = VALUES(tipoParticipanteCodigo),
-                tipoParticipanteDescricao = VALUES(tipoParticipanteDescricao)
         `;
         for (const participant of participants) {
             await connection.execute(participantQuery, [
@@ -210,48 +199,14 @@ class InpulseService {
         }
     }
 
-    private async saveRawInvoiceProducts(connection: any, invoiceId: string, products: any[]) {
+    private async saveProducts(connection: any, products: any[]) {
         if (!products || products.length === 0) return;
         const productQuery = `
-            INSERT INTO gix_nf_produtos (numeroNf, codigoBarras, codigoInterno, codigoFabrica, codigoReferencia, descricao, precoUnitario, unidadeMedida, quantidade, descontoTotal, valorLiquido, valorIpi, valorST, valorFrete, valorSeguro, valorOutras, valorTotal, categoria, fabricante, marca, tipo, subtipo, subtipoDescricao, linha, linhaDescricao, familia, familiaDescricao, cor, corDescricao, exclusivoCd, situacao, fornecedor, operacao)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-                codigoBarras = VALUES(codigoBarras),
-                codigoInterno = VALUES(codigoInterno),
-                codigoFabrica = VALUES(codigoFabrica),
-                codigoReferencia = VALUES(codigoReferencia),
-                descricao = VALUES(descricao),
-                precoUnitario = VALUES(precoUnitario),
-                unidadeMedida = VALUES(unidadeMedida),
-                quantidade = VALUES(quantidade),
-                descontoTotal = VALUES(descontoTotal),
-                valorLiquido = VALUES(valorLiquido),
-                valorIpi = VALUES(valorIpi),
-                valorST = VALUES(valorST),
-                valorFrete = VALUES(valorFrete),
-                valorSeguro = VALUES(valorSeguro),
-                valorOutras = VALUES(valorOutras),
-                valorTotal = VALUES(valorTotal),
-                categoria = VALUES(categoria),
-                fabricante = VALUES(fabricante),
-                marca = VALUES(marca),
-                tipo = VALUES(tipo),
-                subtipo = VALUES(subtipo),
-                subtipoDescricao = VALUES(subtipoDescricao),
-                linha = VALUES(linha),
-                linhaDescricao = VALUES(linhaDescricao),
-                familia = VALUES(familia),
-                familiaDescricao = VALUES(familiaDescricao),
-                cor = VALUES(cor),
-                corDescricao = VALUES(corDescricao),
-                exclusivoCd = VALUES(exclusivoCd),
-                situacao = VALUES(situacao),
-                fornecedor = VALUES(fornecedor),
-                operacao = VALUES(operacao)
+            INSERT INTO gix_nf_produtos (codigoBarras, codigoInterno, codigoFabrica, codigoReferencia, descricao, precoUnitario, unidadeMedida, quantidade, descontoTotal, valorLiquido, valorIpi, valorST, valorFrete, valorSeguro, valorOutras, valorTotal, categoria, fabricante, marca, tipo, subtipo, subtipoDescricao, linha, linhaDescricao, familia, familiaDescricao, cor, corDescricao, exclusivoCd, situacao, fornecedor, operacao)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         for (const product of products) {
             await connection.execute(productQuery, [
-                invoiceId,
                 product.codigoBarras || null,
                 product.codigoInterno || null,
                 product.codigoFabrica || null,
@@ -317,31 +272,6 @@ class InpulseService {
                 const invoiceQuery = `
                     INSERT INTO gix_nf (empresaNotaCodigo, empresaOrigemCodigo, clienteCodigo, vendedorCodigo, data, hora, numeroNF, serieNF, condicaoPagamento, descricaoCondicaoPagamento, cartoes, chaveNFE, tipoNota, valorProdutos, valorDesconto, valorIPI, valorST, valorFrete, valorOutras, valorSeguro, numeroItens, formaDePagamento, rentabilidadeTotal, codigoPedido)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ON DUPLICATE KEY UPDATE
-                        empresaNotaCodigo = VALUES(empresaNotaCodigo),
-                        empresaOrigemCodigo = VALUES(empresaOrigemCodigo),
-                        clienteCodigo = VALUES(clienteCodigo),
-                        vendedorCodigo = VALUES(vendedorCodigo),
-                        data = VALUES(data),
-                        hora = VALUES(hora),
-                        numeroNF = VALUES(numeroNF),
-                        serieNF = VALUES(serieNF),
-                        condicaoPagamento = VALUES(condicaoPagamento),
-                        descricaoCondicaoPagamento = VALUES(descricaoCondicaoPagamento),
-                        cartoes = VALUES(cartoes),
-                        chaveNFE = VALUES(chaveNFE),
-                        tipoNota = VALUES(tipoNota),
-                        valorProdutos = VALUES(valorProdutos),
-                        valorDesconto = VALUES(valorDesconto),
-                        valorIPI = VALUES(valorIPI),
-                        valorST = VALUES(valorST),
-                        valorFrete = VALUES(valorFrete),
-                        valorOutras = VALUES(valorOutras),
-                        valorSeguro = VALUES(valorSeguro),
-                        numeroItens = VALUES(numeroItens),
-                        formaDePagamento = VALUES(formaDePagamento),
-                        rentabilidadeTotal = VALUES(rentabilidadeTotal),
-                        codigoPedido = VALUES(codigoPedido)
                 `;
                 await connection.execute(invoiceQuery, [
                     invoice.empresaNota?.codigo || null,
@@ -377,7 +307,7 @@ class InpulseService {
                 Log.info(`Saved participants for invoice: ${invoice.numeroNF}`);
 
                 if (invoice.produtos && invoice.produtos.length > 0) {
-                    await this.saveRawInvoiceProducts(connection, invoice.numeroNF, invoice.produtos);
+                    await this.saveProducts(connection, invoice.produtos);
                 }
                 Log.info(`Saved products for invoice: ${invoice.numeroNF}`);
 

@@ -24,30 +24,18 @@ class ImportGixRawData {
 
             try {
                 await GixService.forInvoices(startDateString, endDateString, async (invoice) => {
-                    try {
-                        Log.info(`Saving invoice with number: ${invoice.numeroNF}...`);
-                        await InpulseService.saveRawInvoice(invoice);
-                        Log.info(`Invoice with number ${invoice.numeroNF} succesfully saved.`);
-                    } catch (error: any) {
-                        Log.error(`Error saving invoice with number: ${invoice.numeroNF} | ${error?.message}`);
-                    }
+                    await InpulseService.saveRawInvoice(invoice);
                 });
             } catch (error: any) {
                 Log.error(`Error importing invoices | ${error?.message}`);
-            }
-
-            try {
-                await GixService.forCustomers(startDateString, endDateString, async (customer) => {
-                    try {
-                        Log.info(`Saving customer with id: ${customer.id}...`);
+            } finally {
+                try {
+                    await GixService.forCustomers(startDateString, endDateString, async (customer) => {
                         await InpulseService.saveRawCustomer(customer);
-                        Log.info(`Customer with id ${customer.id} succesfully saved.`);
-                    } catch (error: any) {
-                        Log.error(`Error saving customer with id: ${customer.id} | ${error?.message}`);
-                    }
-                });
-            } catch (error: any) {
-                Log.error(`Error importing customers | ${error?.message}`);
+                    });
+                } catch (error: any) {
+                    Log.error(`Error importing customers | ${error?.message}`);
+                }
             }
         }
     }
