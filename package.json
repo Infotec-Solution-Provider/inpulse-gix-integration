@@ -4,11 +4,11 @@
   "main": "dist/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "NODE_ENV=development ts-node src/main.ts",
-    "watch": "NODE_ENV=development nodemon --exec ts-node src/main.ts",
-    "importar:clientes": "NODE_ENV=production node dist/clientes.js",
-    "importar:notas": "NODE_ENV=production node dist/notas.js",
-    "importar:todos": "NODE_ENV=development node dist/main.js",
+    "start": "ts-node src/main.ts --env=development",
+    "watch": "nodemon --exec ts-node src/main.ts --env=development",
+    "importar:clientes": "node dist/clientes.js --env=production",
+    "importar:notas": "node dist/notas.js --env=production",
+    "importar:todos": "node dist/main.js --env=development",
     "build": "tsc"
   },
   "keywords": [],
