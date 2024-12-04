@@ -243,11 +243,8 @@ class InpulseService {
     }
 
     public async saveRawInvoice(invoice: GixInvoice) {
-        const maxRetries = 3;
-        let attempt = 0;
-
-        while (attempt < maxRetries) {
-            const connection = await this.pool.getConnection();
+        try {
+            const connection = await this.pool.getConnection()
             try {
                 await connection.beginTransaction();
 
@@ -306,7 +303,6 @@ class InpulseService {
                 }
 
                 await connection.commit();
-                break; // Exit the retry loop if successful
             } catch (error: any) {
                 await connection.rollback();
 
@@ -314,6 +310,9 @@ class InpulseService {
             } finally {
                 connection.release();
             }
+        } catch (error: any) {
+            Log.error(`Falha ao salvar fatura numero: ${invoice.numeroNF} | ${error?.message}`, error);
+
         }
     }
 }
