@@ -24,13 +24,13 @@ class GixService {
             response => response,
             (error: AxiosError) => {
                 if (error.response) {
-                    Log.error(`Erro na resposta da API: ${error.response.status} - ${error.response.statusText}`);
-                } else if (error.request) {
-                    Log.error('Erro na requisição para a API: Nenhuma resposta recebida');
-                } else {
-                    Log.error(`Erro ao configurar a requisição para a API: ${error.message}`);
+                    Promise.reject(new Error(`Erro na resposta da API: ${error.response.status} - ${error.response.statusText}`));
                 }
-                return Promise.reject(error);
+                if (error.request) {
+                    Promise.reject(new Error(`Erro na requisição para a API: ${error.message}`));
+                }
+
+                return Promise.reject(new Error(`Erro ao configurar a requisição para a API: ${error.message}`));
             }
         );
     }
