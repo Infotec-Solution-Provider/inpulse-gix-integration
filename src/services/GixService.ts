@@ -1,5 +1,5 @@
 import * as dotenv from 'dotenv';
-import axios, { AxiosInstance } from "axios";
+import axios, { AxiosError, AxiosInstance } from "axios";
 import { GixInvoice } from "../types/GixInvoice";
 import { GixCustomer } from "../types/GixCustomer";
 import { GixInvoiceResponse } from "../types/GixInvoiceResponse";
@@ -19,6 +19,20 @@ class GixService {
             baseURL: process.env.GIX_API_URL,
             headers: { Authorization: authString }
         });
+
+        this.api.interceptors.response.use(
+            response => response,
+            (error: AxiosError) => {
+                if (error.response) {
+                    Log.error(`Erro na resposta da API: ${error.response.status} - ${error.response.statusText}`);
+                } else if (error.request) {
+                    Log.error('Erro na requisição para a API: Nenhuma resposta recebida');
+                } else {
+                    Log.error(`Erro ao configurar a requisição para a API: ${error.message}`);
+                }
+                return Promise.reject(error);
+            }
+        );
     }
 
     private async fetchInvoices(startDate: string, endDate: string, page: number) {
