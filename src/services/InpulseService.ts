@@ -16,8 +16,6 @@ class InpulseService {
             password: process.env.INPULSE_DB_PASSWORD,
             database: process.env.INPULSE_DB_NAME
         });
-
-        Log.info('Inpulse database connection pool created.');
     }
 
     public async getCustomerByErpId(erpId: string) {
@@ -25,62 +23,61 @@ class InpulseService {
         const [result] = await this.pool.query<RowDataPacket[]>(query, [erpId]);
         const customer = result[0] as { CODIGO: number };
 
-        Log.info(`Fetched customer by ERP ID: ${erpId}`);
-
         return customer;
     }
 
     public async saveRawCustomer(customer: GixCustomer) {
-        const query = `
-        INSERT INTO gix_clientes (id, nome, cpfCnpj, tipoPessoa, telefone, celular, cep, email, endereco, bairro, cidade, estado, pais, inscrEstadual, nomeReduzido, tipoCadastro, dataAtualizacao, tipoClienteCodigo, tipoClienteDescricao)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-            nome = VALUES(nome),
-            cpfCnpj = VALUES(cpfCnpj),
-            tipoPessoa = VALUES(tipoPessoa),
-            telefone = VALUES(telefone),
-            celular = VALUES(celular),
-            cep = VALUES(cep),
-            email = VALUES(email),
-            endereco = VALUES(endereco),
-            bairro = VALUES(bairro),
-            cidade = VALUES(cidade),
-            estado = VALUES(estado),
-            pais = VALUES(pais),
-            inscrEstadual = VALUES(inscrEstadual),
-            nomeReduzido = VALUES(nomeReduzido),
-            tipoCadastro = VALUES(tipoCadastro),
-            dataAtualizacao = VALUES(dataAtualizacao),
-            tipoClienteCodigo = VALUES(tipoClienteCodigo),
-            tipoClienteDescricao = VALUES(tipoClienteDescricao)
-    `;
+        try {
+            const query = `
+            INSERT INTO gix_clientes (id, nome, cpfCnpj, tipoPessoa, telefone, celular, cep, email, endereco, bairro, cidade, estado, pais, inscrEstadual, nomeReduzido, tipoCadastro, dataAtualizacao, tipoClienteCodigo, tipoClienteDescricao)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+                nome = VALUES(nome),
+                cpfCnpj = VALUES(cpfCnpj),
+                tipoPessoa = VALUES(tipoPessoa),
+                telefone = VALUES(telefone),
+                celular = VALUES(celular),
+                cep = VALUES(cep),
+                email = VALUES(email),
+                endereco = VALUES(endereco),
+                bairro = VALUES(bairro),
+                cidade = VALUES(cidade),
+                estado = VALUES(estado),
+                pais = VALUES(pais),
+                inscrEstadual = VALUES(inscrEstadual),
+                nomeReduzido = VALUES(nomeReduzido),
+                tipoCadastro = VALUES(tipoCadastro),
+                dataAtualizacao = VALUES(dataAtualizacao),
+                tipoClienteCodigo = VALUES(tipoClienteCodigo),
+                tipoClienteDescricao = VALUES(tipoClienteDescricao)
+        `;
 
-        const values = [
-            customer.id,
-            customer.nome,
-            customer.cpfCnpj,
-            customer.tipoPessoa || null,
-            customer.telefone || null,
-            customer.celular || null,
-            customer.cep || null,
-            customer.email || null,
-            customer.endereco || null,
-            customer.bairro || null,
-            customer.cidade || null,
-            customer.estado || null,
-            customer.pais || null,
-            customer.inscrEstadual || null,
-            customer.nomeReduzido || null,
-            customer.tipoCadastro || null,
-            customer.dataAtualizacao || null,
-            customer.tipoCliente?.codigo || null,
-            customer.tipoCliente?.descricao || null
-        ];
+            const values = [
+                customer.id,
+                customer.nome,
+                customer.cpfCnpj,
+                customer.tipoPessoa || null,
+                customer.telefone || null,
+                customer.celular || null,
+                customer.cep || null,
+                customer.email || null,
+                customer.endereco || null,
+                customer.bairro || null,
+                customer.cidade || null,
+                customer.estado || null,
+                customer.pais || null,
+                customer.inscrEstadual || null,
+                customer.nomeReduzido || null,
+                customer.tipoCadastro || null,
+                customer.dataAtualizacao || null,
+                customer.tipoCliente?.codigo || null,
+                customer.tipoCliente?.descricao || null
+            ];
 
-        Log.info(`Saving customer with id: ${customer.id}`);
-        console.log(customer);
-
-        await this.pool.execute(query, values);
+            await this.pool.execute(query, values);
+        } catch (error: any) {
+            Log.error(`Falha ao salvar cliente id: ${customer.id} | ${error?.message}`, error);
+        }
     }
 
     private async saveCompany(connection: any, company: any) {
@@ -153,6 +150,8 @@ class InpulseService {
 
     private async saveSeller(connection: any, seller: any) {
         if (!seller) return;
+        if (!seller.codigo || seller.codigo.length === 0) return;
+
         const sellerQuery = `
             INSERT INTO gix_nf_vendedores (codigo, cnpjCpf, nome, tipo, tipoDescricao, gerente, gerenteDescricao, ativoInativo)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -167,7 +166,7 @@ class InpulseService {
         `;
         await connection.execute(sellerQuery, [
             seller.codigo || null,
-            seller.cnpjCpf|| null, 
+            seller.cnpjCpf || null,
             seller.nome || null,
             seller.tipo || null,
             seller.tipoDescricao || null,
@@ -246,6 +245,7 @@ class InpulseService {
     public async saveRawInvoice(invoice: GixInvoice) {
         const maxRetries = 3;
         let attempt = 0;
+
         while (attempt < maxRetries) {
             const connection = await this.pool.getConnection();
             try {
@@ -257,17 +257,14 @@ class InpulseService {
                 if (invoice.empresaOrigem) {
                     await this.saveCompany(connection, invoice.empresaOrigem);
                 }
-                Log.info(`Saved companies for invoice: ${invoice.numeroNF}`);
 
                 if (invoice.cliente) {
                     await this.saveCustomer(connection, invoice.cliente);
                 }
-                Log.info(`Saved customer for invoice: ${invoice.numeroNF}`);
 
                 if (invoice.vendedor) {
                     await this.saveSeller(connection, invoice.vendedor);
                 }
-                Log.info(`Saved seller for invoice: ${invoice.numeroNF}`);
 
                 const invoiceQuery = `
                     INSERT INTO gix_nf (empresaNotaCodigo, empresaOrigemCodigo, clienteCodigo, vendedorCodigo, data, hora, numeroNF, serieNF, condicaoPagamento, descricaoCondicaoPagamento, cartoes, chaveNFE, tipoNota, valorProdutos, valorDesconto, valorIPI, valorST, valorFrete, valorOutras, valorSeguro, numeroItens, formaDePagamento, rentabilidadeTotal, codigoPedido)
@@ -299,36 +296,23 @@ class InpulseService {
                     invoice.rentabilidadeTotal || null,
                     invoice.codigoPedido || null
                 ]);
-                Log.info(`Saved invoice: ${invoice.numeroNF}`);
 
                 if (invoice.participantes && invoice.participantes.length > 0) {
                     await this.saveParticipants(connection, invoice.participantes);
                 }
-                Log.info(`Saved participants for invoice: ${invoice.numeroNF}`);
 
                 if (invoice.produtos && invoice.produtos.length > 0) {
                     await this.saveProducts(connection, invoice.produtos);
                 }
-                Log.info(`Saved products for invoice: ${invoice.numeroNF}`);
 
                 await connection.commit();
-                Log.info(`Transaction committed for invoice: ${invoice.numeroNF}`);
                 break; // Exit the retry loop if successful
             } catch (error: any) {
                 await connection.rollback();
-                Log.error(`Transaction rolled back for invoice: ${invoice.numeroNF} due to error: ${error.message}`);
-                if (error.code === 'ER_LOCK_DEADLOCK') {
-                    attempt++;
-                    Log.error(`Deadlock detected. Retrying transaction... Attempt ${attempt} of ${maxRetries}`);
-                    if (attempt >= maxRetries) {
-                        throw new Error(`Failed to save invoice after ${maxRetries} attempts due to deadlock.`);
-                    }
-                } else {
-                    throw error;
-                }
+
+                Log.error(`Falha ao salvar fatura numero: ${invoice.numeroNF} | ${error?.message}`, error);
             } finally {
                 connection.release();
-                Log.info(`Connection released for invoice: ${invoice.numeroNF}`);
             }
         }
     }

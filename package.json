@@ -3,7 +3,13 @@
   "version": "1.0.0",
   "main": "dist/main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "ts-node src/main.ts",
+    "start:prod": "node dist/main.js",
+    "start:watch": "nodemon --exec ts-node src/main.ts",
+    "importar:clientes": "node dist/clientes.js",
+    "importar:notas": "node dist/notas.js",
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
@@ -12,7 +18,7 @@
   "devDependencies": {
     "@types/node": "^22.9.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.6.3"
+    "typescript": "^5.7.2"
   },
   "dependencies": {
     "axios": "^1.7.7",

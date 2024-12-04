@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "lib": ["es2023"],
     "target": "ES6",
     "module": "commonjs",
     "outDir": "./dist",

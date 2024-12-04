@@ -4,6 +4,7 @@ import { GixInvoice } from "../types/GixInvoice";
 import { GixCustomer } from "../types/GixCustomer";
 import { GixInvoiceResponse } from "../types/GixInvoiceResponse";
 import Log from '../utils/log';
+import GixDate from '../utils/gix-date';
 
 class GixService {
     private api: AxiosInstance;
@@ -22,58 +23,61 @@ class GixService {
 
     private async fetchInvoices(startDate: string, endDate: string, page: number) {
         const url = "/shx-integracao-servicos/notas";
-        const body = { dataInicial: startDate, dataFinal: endDate, paginacao: page };
+        const body = {
+            dataInicial: startDate,
+            dataFinal: endDate,
+            paginacao: page,
+            empresasOrigem: ["07665018000151", "07665018000232", "07665018000313", "07665018000402"],
+            empresas: ["07665018000151", "07665018000232", "07665018000313", "07665018000402"],
+        };
+
+        Log.info(`Buscando faturas da página ${page}...`);
         const response = await this.api.post<GixInvoiceResponse>(url, body);
+        Log.info(response.data.content.length > 0 ? `${response.data.content.length} faturas encontradas!` : 'Nenhuma fatura encontrada...');
 
         return response.data;
     }
 
     private async fetchCustomers(startDate: string, endDate: string, page: number) {
         const url = "/shx-integracao-servicos/clientes";
-        const params = { dataOcorrencia: startDate, dataFim: endDate, pagina: page };
+        const params = {
+            dataOcorrencia: startDate,
+            dataFim: endDate,
+            pagina: page,
+        };
+
+        Log.info(`Buscando clientes da página ${page}...`);
         const response = await this.api.get<Array<GixCustomer>>(url, { params });
+        Log.info(response.data.length > 0 ? `${response.data.length} clientes encontrados!` : 'Nenhum cliente encontrado...');
 
         return response.data;
     }
 
     public async forInvoices(startDate: string, endDate: string, callback: (invoice: GixInvoice) => Promise<void>) {
         let page = 1;
-        Log.info(`Fetching invoices from ${startDate} to ${endDate} | Page: ${page}...`);
         let data = await this.fetchInvoices(startDate, endDate, page);
-        Log.info(`Fetched ${data.content.length} invoices.`);
 
         while (data.lastPage === false) {
             for (let i = 0; i < data.content.length; i++) {
-                Log.info(`Processing invoice ${i + 1} of ${data.content.length}...`);
                 await callback(data.content[i]);
             }
 
             page++;
-
-            Log.info(`Fetching invoices from ${startDate} to ${endDate} | Page: ${page}...`);
             data = await this.fetchInvoices(startDate, endDate, page);
-            Log.info(`Fetched ${data.content.length} invoices.`);
         }
     }
 
-    public async forCustomers(startDate: string, endDate: string, callback: (customer: GixCustomer) => Promise<void>) {
+    public async forCustomers(startDate: GixDate, endDate: GixDate, callback: (customer: GixCustomer) => Promise<void>) {
         let page = 1;
-
-        Log.info(`Fetching customers from ${startDate} to ${endDate}... | Page: ${page}`);
-        let data = await this.fetchCustomers(startDate, endDate, page);
-        Log.info(`Fetched ${data.length} customers.`);
+        let data = await this.fetchCustomers(startDate.toGixString(), endDate.toGixString(), page);
 
         while (data.length > 0) {
             for (let i = 0; i < data.length; i++) {
-                Log.info(`Processing customer ${i + 1} of ${data.length}...`);
                 await callback(data[i]);
             }
 
             page++;
-
-            Log.info(`Fetching customers from ${startDate} to ${endDate}... | Page: ${page}`);
-            data = await this.fetchCustomers(startDate, endDate, page);
-            Log.info(`Fetched ${data.length} customers.`);
+            data = await this.fetchCustomers(startDate.toGixString(), endDate.toGixString(), page);
         }
     }
 }

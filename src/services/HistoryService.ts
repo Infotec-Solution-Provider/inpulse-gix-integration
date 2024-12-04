@@ -47,8 +47,8 @@ class HistoryService {
         writeFileSync(historyPath, historyString, "utf8");
     }
 
-    public getMostRecentProcessedDate(type: "customers" | "invoices") {
-        const records = type === "invoices" ? this.invoiceRecords : this.customerRecords;
+    public getMostRecentProcessedDate(type: "clientes" | "notas") {
+        const records = type === "notas" ? this.invoiceRecords : this.customerRecords;
 
         if (records.length === 0) {
             return null;
