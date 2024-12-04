@@ -10,7 +10,9 @@ Esta rotina é responsável por importar dados de clientes e notas fiscais de um
 
 1. Abra um terminal no diretório do projeto.
 2. Execute o comando:
+   ```sh
    npm install
+   ```
 
 ### Configure o Arquivo `.env`
 
@@ -34,19 +36,25 @@ Esta rotina é responsável por importar dados de clientes e notas fiscais de um
 
 1. Abra um terminal no diretório do projeto.
 2. Execute o comando:
+   ```sh
    npm run importar:clientes
+   ```
 
 ### Executando a Rotina de Notas Fiscais
 
 1. Abra um terminal no diretório do projeto.
 2. Execute o comando:
+   ```sh
    npm run importar:notas
+   ```
 
 ### Executando a Rotina de Clientes e Notas Fiscais em Paralelo
 
 1. Abra um terminal no diretório do projeto.
 2. Execute o comando:
-   npm run start
+   ```sh
+   npm run importar:todos
+   ```
 
 ## Ajustando Período da Importação
 
