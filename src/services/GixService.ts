@@ -35,7 +35,7 @@ class GixService {
         );
     }
 
-    private async fetchInvoices(startDate: string, endDate: string, page: number) {
+    private async fetchInvoices(startDate: string, endDate: string, page: number): Promise<GixInvoiceResponse> {
         const url = "/shx-integracao-servicos/notas";
         const body = {
             dataInicial: startDate,
@@ -45,15 +45,25 @@ class GixService {
             empresas: ["07665018000151", "07665018000232", "07665018000313", "07665018000402"],
         };
 
-        try {
-            Log.info(`Buscando faturas da página ${page}...`);
-            const response = await this.api.post<GixInvoiceResponse>(url, body);
-            Log.info(response.data.content.length > 0 ? `${response.data.content.length} faturas encontradas!` : 'Nenhuma fatura encontrada...');
-            return response.data;
-        } catch (error: any) {
-            Log.error(`Erro ao buscar faturas: ${error.message}`);
-            throw error;
+        let attempts = 0;
+        const maxAttempts = 3;
+
+        while (attempts < maxAttempts) {
+            try {
+                Log.info(`Buscando faturas da página ${page}...`);
+                const response = await this.api.post<GixInvoiceResponse>(url, body);
+                Log.info(response.data.content.length > 0 ? `${response.data.content.length} faturas encontradas!` : 'Nenhuma fatura encontrada...');
+                return response.data;
+            } catch (error: any) {
+                attempts++;
+                Log.error(`Erro ao buscar faturas (tentativa ${attempts} de ${maxAttempts}): ${error.message}`);
+                if (attempts >= maxAttempts) {
+                    throw error;
+                }
+            }
         }
+
+        throw new Error('Falha ao buscar faturas após várias tentativas.');
     }
 
     private async fetchCustomers(startDate: string, endDate: string, page: number) {
@@ -64,15 +74,25 @@ class GixService {
             pagina: page,
         };
 
-        try {
-            Log.info(`Buscando clientes da página ${page}...`);
-            const response = await this.api.get<Array<GixCustomer>>(url, { params });
-            Log.info(response.data.length > 0 ? `${response.data.length} clientes encontrados!` : 'Nenhum cliente encontrado...');
-            return response.data;
-        } catch (error: any) {
-            Log.error(`Erro ao buscar clientes: ${error.message}`);
-            throw error;
+        let attempts = 0;
+        const maxAttempts = 3;
+
+        while (attempts < maxAttempts) {
+            try {
+                Log.info(`Buscando clientes da página ${page}...`);
+                const response = await this.api.get<Array<GixCustomer>>(url, { params });
+                Log.info(response.data.length > 0 ? `${response.data.length} clientes encontrados!` : 'Nenhum cliente encontrado...');
+                return response.data;
+            } catch (error: any) {
+                attempts++;
+                Log.error(`Erro ao buscar clientes (tentativa ${attempts} de ${maxAttempts}): ${error.message}`);
+                if (attempts >= maxAttempts) {
+                    throw error;
+                }
+            }
         }
+
+        throw new Error('Falha ao buscar faturas após várias tentativas.');
     }
 
     public async forInvoices(startDate: string, endDate: string, callback: (invoice: GixInvoice) => Promise<void>) {
