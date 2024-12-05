@@ -36,6 +36,7 @@ class ImportGixRawData {
             Log.info(`Importando clientes do periodo: ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}...`);
 
             await GixService.forCustomers(startDate, endDate, async (customer) => await InpulseService.saveRawCustomer(customer));
+            
             this.importedCustomers.add(startDate.toGixString());
             this.saveImportedDays(this.importedCustomersFilePath, this.importedCustomers);
         } catch (error: any) {
@@ -46,9 +47,9 @@ class ImportGixRawData {
     private async invoicesFrom(startDate: GixDate, endDate: GixDate) {
         try {
             Log.info(`Importando faturas do periodo: ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}...`);
-            await GixService.forInvoices(startDate.toGixString(), endDate.toGixString(), async (invoice) => {
-                await InpulseService.saveRawInvoice(invoice);
-            });
+
+            await GixService.forInvoices(startDate, endDate, async (invoice) => await InpulseService.saveRawInvoice(invoice));
+
             this.importedInvoices.add(startDate.toGixString());
             this.saveImportedDays(this.importedInvoicesFilePath, this.importedInvoices);
         } catch (error: any) {

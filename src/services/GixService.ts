@@ -95,9 +95,9 @@ class GixService {
         throw new Error('Falha ao buscar faturas após várias tentativas.');
     }
 
-    public async forInvoices(startDate: string, endDate: string, callback: (invoice: GixInvoice) => Promise<void>) {
+    public async forInvoices(startDate: GixDate, endDate: GixDate, callback: (invoice: GixInvoice) => Promise<void>) {
         let page = 1;
-        let data = await this.fetchInvoices(startDate, endDate, page);
+        let data = await this.fetchInvoices(startDate.toGixString(), endDate.toGixString(), page);
 
         while (data.lastPage === false) {
             for (let i = 0; i < data.content.length; i++) {
@@ -105,7 +105,7 @@ class GixService {
             }
 
             page++;
-            data = await this.fetchInvoices(startDate, endDate, page);
+            data = await this.fetchInvoices(startDate.toGixString(), endDate.toGixString(), page);
         }
     }
 
