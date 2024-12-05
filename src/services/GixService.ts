@@ -24,10 +24,10 @@ class GixService {
             response => response,
             (error: AxiosError) => {
                 if (error.response) {
-                    Promise.reject(new Error(`Erro na resposta da API: ${error.response.status} - ${error.response.statusText}`));
+                    return Promise.reject(new Error(`Erro na resposta da API: ${error.response.status} - ${error.response.statusText}`));
                 }
                 if (error.request) {
-                    Promise.reject(new Error(`Erro na requisição para a API: ${error.message}`));
+                    return Promise.reject(new Error(`Erro na requisição para a API: ${error.message}`));
                 }
 
                 return Promise.reject(new Error(`Erro ao configurar a requisição para a API: ${error.message}`));
@@ -45,11 +45,15 @@ class GixService {
             empresas: ["07665018000151", "07665018000232", "07665018000313", "07665018000402"],
         };
 
-        Log.info(`Buscando faturas da página ${page}...`);
-        const response = await this.api.post<GixInvoiceResponse>(url, body);
-        Log.info(response.data.content.length > 0 ? `${response.data.content.length} faturas encontradas!` : 'Nenhuma fatura encontrada...');
-
-        return response.data;
+        try {
+            Log.info(`Buscando faturas da página ${page}...`);
+            const response = await this.api.post<GixInvoiceResponse>(url, body);
+            Log.info(response.data.content.length > 0 ? `${response.data.content.length} faturas encontradas!` : 'Nenhuma fatura encontrada...');
+            return response.data;
+        } catch (error: any) {
+            Log.error(`Erro ao buscar faturas: ${error.message}`);
+            throw error;
+        }
     }
 
     private async fetchCustomers(startDate: string, endDate: string, page: number) {
@@ -60,11 +64,15 @@ class GixService {
             pagina: page,
         };
 
-        Log.info(`Buscando clientes da página ${page}...`);
-        const response = await this.api.get<Array<GixCustomer>>(url, { params });
-        Log.info(response.data.length > 0 ? `${response.data.length} clientes encontrados!` : 'Nenhum cliente encontrado...');
-
-        return response.data;
+        try {
+            Log.info(`Buscando clientes da página ${page}...`);
+            const response = await this.api.get<Array<GixCustomer>>(url, { params });
+            Log.info(response.data.length > 0 ? `${response.data.length} clientes encontrados!` : 'Nenhum cliente encontrado...');
+            return response.data;
+        } catch (error: any) {
+            Log.error(`Erro ao buscar clientes: ${error.message}`);
+            throw error;
+        }
     }
 
     public async forInvoices(startDate: string, endDate: string, callback: (invoice: GixInvoice) => Promise<void>) {
