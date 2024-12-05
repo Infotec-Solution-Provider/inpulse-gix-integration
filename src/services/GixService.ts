@@ -24,7 +24,7 @@ class GixService {
             response => response,
             (error: AxiosError) => {
                 if (error.response) {
-                    return Promise.reject(new Error(`Erro na resposta da API: ${error.response.status} - ${error.response.statusText}`));
+                    return Promise.reject(new Error(`Erro na resposta da API: ${error.response.status} - ${(error.response.data as any)?.messages?.[0]}`));
                 }
                 if (error.request) {
                     return Promise.reject(new Error(`Erro na requisição para a API: ${error.message}`));
