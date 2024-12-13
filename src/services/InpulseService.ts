@@ -26,7 +26,7 @@ class InpulseService {
         return customer;
     }
 
-    public async saveRawCustomer(customer: GixCustomer) {
+    public async saveGixCustomer(customer: GixCustomer) {
         try {
             const query = `
             INSERT INTO gix_clientes (id, nome, cpfCnpj, tipoPessoa, telefone, celular, cep, email, endereco, bairro, cidade, estado, pais, inscrEstadual, nomeReduzido, tipoCadastro, dataAtualizacao, tipoClienteCodigo, tipoClienteDescricao)
@@ -80,23 +80,7 @@ class InpulseService {
         }
     }
 
-    private async saveCompany(connection: any, company: any) {
-        if (!company) return;
-        const companyQuery = `
-            INSERT INTO gix_nf_empresas (codigo, nome, cnpj)
-            VALUES (?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-                nome = VALUES(nome),
-                cnpj = VALUES(cnpj)
-        `;
-        await connection.execute(companyQuery, [
-            company.codigo,
-            company.nome,
-            company.cnpj
-        ]);
-    }
-
-    private async saveCustomer(connection: any, customer: any) {
+    private async saveGixInvoiceCustomer(connection: any, customer: any) {
         if (!customer) return;
         const customerQuery = `
             INSERT INTO gix_nf_clientes (codigo, tipoPessoa, cnpjCpf, nome, celular, email, sexo, dataNascimento, profissao, dataCadastro, dataUltimaCompra, tipo, descricaoTipo, subTipo, descricaoSubTipo, endereco, bairro, cidade, estado, cep, complemento)
@@ -148,7 +132,7 @@ class InpulseService {
         ]);
     }
 
-    private async saveSeller(connection: any, seller: any) {
+    private async saveGixInvoiceSeller(connection: any, seller: any) {
         if (!seller) return;
         if (!seller.codigo || seller.codigo.length === 0) return;
 
@@ -176,29 +160,7 @@ class InpulseService {
         ]);
     }
 
-    private async saveParticipants(connection: any, participants: any[]) {
-        if (!participants || participants.length === 0) return;
-        const participantQuery = `
-            INSERT INTO gix_nf_participantes (tipoPessoa, cnpjCpf, cnpjCpfCliente, nome, telefone, celular, email, sexo, tipoParticipanteCodigo, tipoParticipanteDescricao)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
-        for (const participant of participants) {
-            await connection.execute(participantQuery, [
-                participant.tipoPessoa || null,
-                participant.cnpjCpf || null,
-                participant.cnpjCpfCliente || null,
-                participant.nome || null,
-                participant.telefone || null,
-                participant.celular || null,
-                participant.email || null,
-                participant.sexo || null,
-                participant.tipoParticipante.codigo || null,
-                participant.tipoParticipante.descricao || null
-            ]);
-        }
-    }
-
-    private async saveProducts(connection: any, products: any[]) {
+    private async saveGixInvoiceProducts(connection: any, products: any[]) {
         if (!products || products.length === 0) return;
         const productQuery = `
             INSERT INTO gix_nf_produtos (codigoBarras, codigoInterno, codigoFabrica, codigoReferencia, descricao, precoUnitario, unidadeMedida, quantidade, descontoTotal, valorLiquido, valorIpi, valorST, valorFrete, valorSeguro, valorOutras, valorTotal, categoria, fabricante, marca, tipo, subtipo, subtipoDescricao, linha, linhaDescricao, familia, familiaDescricao, cor, corDescricao, exclusivoCd, situacao, fornecedor, operacao)
@@ -242,31 +204,25 @@ class InpulseService {
         }
     }
 
-    public async saveRawInvoice(invoice: GixInvoice) {
+    public async saveGixInvoice(invoice: GixInvoice) {
         try {
             const connection = await this.pool.getConnection()
             try {
                 await connection.beginTransaction();
 
-                if (invoice.empresaNota) {
-                    await this.saveCompany(connection, invoice.empresaNota);
-                }
-                if (invoice.empresaOrigem) {
-                    await this.saveCompany(connection, invoice.empresaOrigem);
-                }
-
                 if (invoice.cliente) {
-                    await this.saveCustomer(connection, invoice.cliente);
+                    await this.saveGixInvoiceCustomer(connection, invoice.cliente);
                 }
 
                 if (invoice.vendedor) {
-                    await this.saveSeller(connection, invoice.vendedor);
+                    await this.saveGixInvoiceSeller(connection, invoice.vendedor);
                 }
 
                 const invoiceQuery = `
                     INSERT INTO gix_nf (empresaNotaCodigo, empresaOrigemCodigo, clienteCodigo, vendedorCodigo, data, hora, numeroNF, serieNF, condicaoPagamento, descricaoCondicaoPagamento, cartoes, chaveNFE, tipoNota, valorProdutos, valorDesconto, valorIPI, valorST, valorFrete, valorOutras, valorSeguro, numeroItens, formaDePagamento, rentabilidadeTotal, codigoPedido)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `;
+
                 await connection.execute(invoiceQuery, [
                     invoice.empresaNota?.codigo || null,
                     invoice.empresaOrigem?.codigo || null,
@@ -294,12 +250,8 @@ class InpulseService {
                     invoice.codigoPedido || null
                 ]);
 
-                if (invoice.participantes && invoice.participantes.length > 0) {
-                    await this.saveParticipants(connection, invoice.participantes);
-                }
-
                 if (invoice.produtos && invoice.produtos.length > 0) {
-                    await this.saveProducts(connection, invoice.produtos);
+                    await this.saveGixInvoiceProducts(connection, invoice.produtos);
                 }
 
                 await connection.commit();
