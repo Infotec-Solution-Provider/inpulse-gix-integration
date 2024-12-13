@@ -43,6 +43,7 @@ class GixService {
             paginacao: page,
             empresasOrigem: ["07665018000151", "07665018000232", "07665018000313", "07665018000402"],
             empresas: ["07665018000151", "07665018000232", "07665018000313", "07665018000402"],
+            incluirCanceladas: "NAO"
         };
 
         let attempts = 0;
@@ -105,6 +106,7 @@ class GixService {
             }
 
             page++;
+
             data = await this.fetchInvoices(startDate.toGixString(), endDate.toGixString(), page);
         }
     }
