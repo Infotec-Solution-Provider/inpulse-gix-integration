@@ -1,66 +1,44 @@
 import path from "path";
-import { RoutineHistoryRecord } from "../types/RoutineHistoryRecord";
-import { readFileSync, writeFileSync } from "fs";
+import { existsSync, readFileSync, writeFileSync } from "fs";
 
 class HistoryService {
-    private invoiceRecords: Array<RoutineHistoryRecord> = [];
-    private customerRecords: Array<RoutineHistoryRecord> = [];
+    private importedCustomersFilePath = path.join(__dirname, 'importedCustomers.json');
+    private importedInvoicesFilePath = path.join(__dirname, 'importedInvoices.json');
+    private importedCustomers: Set<string>;
+    private importedInvoices: Set<string>;
 
     constructor() {
-        this.loadHistory();
+        this.importedCustomers = this.loadImportedDays(this.importedCustomersFilePath);
+        this.importedInvoices = this.loadImportedDays(this.importedInvoicesFilePath);
     }
 
-    private loadHistory() {
-        const historyPath = path.join(__dirname, "history.txt");
-        const historyString = readFileSync(historyPath, "utf8");
-
-        historyString.split("\r\n").forEach(line => {
-            const [type, date] = line.split("_");
-
-            const arr = type === "invoice" ? this.invoiceRecords : this.customerRecords;
-
-            const year = date.slice(0, 4);
-            const month = date.slice(4, 6);
-            const day = date.slice(6);
-
-            arr.push({ year, month, day });
-        });
+    private loadImportedDays(filePath: string): Set<string> {
+        if (existsSync(filePath)) {
+            const data = readFileSync(filePath, 'utf8');
+            return new Set(JSON.parse(data));
+        }
+        return new Set();
     }
 
-    public saveHistory() {
-        const historyPath = path.join(__dirname, "history.txt");
-
-        const historyLines: string[] = [];
-
-        this.invoiceRecords.forEach(record => {
-            const date = `${record.year}${record.month}${record.day}`;
-            historyLines.push(`invoice_${date}`);
-        });
-
-        this.customerRecords.forEach(record => {
-            const date = `${record.year}${record.month}${record.day}`;
-            historyLines.push(`customer_${date}`);
-        });
-
-        const historyString = historyLines.join("\r\n");
-
-        writeFileSync(historyPath, historyString, "utf8");
+    public saveImportedDays(type: "clientes" | "notas") {
+        writeFileSync(
+            type === "clientes" ? this.importedCustomersFilePath : this.importedInvoicesFilePath,
+            JSON.stringify(Array.from(type === "clientes" ? this.importedCustomers : this.importedInvoices))
+        );
     }
 
-    public getMostRecentProcessedDate(type: "clientes" | "notas") {
-        const records = type === "notas" ? this.invoiceRecords : this.customerRecords;
-
-        if (records.length === 0) {
-            return null;
+    public addImportedDay(type: "clientes" | "notas", day: string) {
+        if (type === "clientes") {
+            this.importedCustomers.add(day);
         }
 
-        const mostRecentRecord = records.reduce((latest, record) => {
-            const recordDate = new Date(`${record.year}-${record.month}-${record.day}`);
-            const latestDate = new Date(`${latest.year}-${latest.month}-${latest.day}`);
-            return recordDate > latestDate ? record : latest;
-        });
+        if (type === "notas") {
+            this.importedInvoices.add(day);;
+        }
+    }
 
-        return mostRecentRecord;
+    public getImportedDays(type: "clientes" | "notas"): Set<string> {
+        return type === "clientes" ? this.importedCustomers : this.importedInvoices;
     }
 }
 
