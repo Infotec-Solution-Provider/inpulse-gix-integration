@@ -8,6 +8,7 @@ import GixDate from '../utils/gix-date';
 
 class GixService {
     private api: AxiosInstance;
+    private cnpjs = ["07665018000151", "07665018000232", "07665018000313", "07665018000402"];
 
     constructor() {
         dotenv.config();
@@ -41,20 +42,20 @@ class GixService {
             dataInicial: startDate,
             dataFinal: endDate,
             paginacao: page,
-            empresasOrigem: ["07665018000151", "07665018000232", "07665018000313", "07665018000402"],
-            empresas: ["07665018000151", "07665018000232", "07665018000313", "07665018000402"],
             incluirCanceladas: "NAO"
         };
 
         let attempts = 0;
-        const maxAttempts = 3;
+        const maxAttempts = Number(process.env.MAX_ATTEMPTS || "3") || 3;
 
         while (attempts < maxAttempts) {
             try {
                 Log.info(`Buscando faturas da página ${page}...`);
-                const response = await this.api.post<GixInvoiceResponse>(url, body);
-                Log.info(response.data.content.length > 0 ? `${response.data.content.length} faturas encontradas!` : 'Nenhuma fatura encontrada...');
-                return response.data;
+                const data = (await this.api.post<GixInvoiceResponse>(url, body)).data;
+                data.content = data.content.filter(invoice => this.cnpjs.includes(invoice.empresaNota.cnpj) || this.cnpjs.includes(invoice.empresaOrigem.cnpj));
+                Log.info(data.content.length > 0 ? `${data.content.length} faturas encontradas!` : 'Nenhuma fatura encontrada...');
+
+                return data;
             } catch (error: any) {
                 attempts++;
                 Log.error(`Erro ao buscar faturas (tentativa ${attempts} de ${maxAttempts}): ${error.message}`);
@@ -71,19 +72,20 @@ class GixService {
         const url = "/shx-integracao-servicos/clientes";
         const params = {
             dataOcorrencia: startDate,
-            dataFim: endDate,
-            pagina: page,
+            dataFinal: endDate,
+            paginacao: page,
         };
 
         let attempts = 0;
-        const maxAttempts = 3;
+        const maxAttempts = Number(process.env.MAX_ATTEMPTS || "3") || 3;
 
         while (attempts < maxAttempts) {
             try {
                 Log.info(`Buscando clientes da página ${page}...`);
-                const response = await this.api.get<Array<GixCustomer>>(url, { params });
-                Log.info(response.data.length > 0 ? `${response.data.length} clientes encontrados!` : 'Nenhum cliente encontrado...');
-                return response.data;
+                const data = (await this.api.get<Array<GixCustomer>>(url, { params })).data;
+                Log.info(data.length > 0 ? `${data.length} clientes encontrados!` : 'Nenhum cliente encontrado...');
+
+                return data;
             } catch (error: any) {
                 attempts++;
                 Log.error(`Erro ao buscar clientes (tentativa ${attempts} de ${maxAttempts}): ${error.message}`);
