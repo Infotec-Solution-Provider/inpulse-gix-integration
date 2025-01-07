@@ -19,15 +19,14 @@ CREATE TABLE gix_cliente (
     tipoClienteCodigo VARCHAR(255) NOT NULL,
     tipoClienteDescricao VARCHAR(255) NOT NULL,
     PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
+) ENGINE = InnoDB DEFAULT CHARSET = latin1;
 
 CREATE TABLE gix_nf_empresas (
     codigo INT(11) NOT NULL,
     nome VARCHAR(255) NOT NULL,
     cnpj VARCHAR(255) NOT NULL,
     PRIMARY KEY (codigo)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE = InnoDB DEFAULT CHARSET = latin1;
 
 CREATE TABLE gix_nf_clientes (
     codigo INT(11) NOT NULL,
@@ -52,7 +51,7 @@ CREATE TABLE gix_nf_clientes (
     cep VARCHAR(20) NOT NULL,
     complemento VARCHAR(255) NOT NULL,
     PRIMARY KEY (codigo)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE = InnoDB DEFAULT CHARSET = latin1;
 
 CREATE TABLE gix_nf_participantes (
     id INT(11) NOT NULL AUTO_INCREMENT,
@@ -67,8 +66,7 @@ CREATE TABLE gix_nf_participantes (
     tipoParticipanteCodigo VARCHAR(255) NOT NULL,
     tipoParticipanteDescricao VARCHAR(255) NOT NULL,
     PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
+) ENGINE = InnoDB DEFAULT CHARSET = latin1;
 
 CREATE TABLE gix_nf_produtos (
     id INT(11) NOT NULL AUTO_INCREMENT,
@@ -105,7 +103,7 @@ CREATE TABLE gix_nf_produtos (
     fornecedor VARCHAR(255) NOT NULL,
     operacao VARCHAR(255) NOT NULL,
     PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE = InnoDB DEFAULT CHARSET = latin1;
 
 CREATE TABLE gix_nf_vendedores (
     codigo VARCHAR(255) NOT NULL,
@@ -117,7 +115,7 @@ CREATE TABLE gix_nf_vendedores (
     gerenteDescricao VARCHAR(255) NOT NULL,
     ativoInativo VARCHAR(255) NOT NULL,
     PRIMARY KEY (codigo)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE = InnoDB DEFAULT CHARSET = latin1;
 
 CREATE TABLE gix_nf (
     id INT(11) NOT NULL AUTO_INCREMENT,
@@ -146,8 +144,8 @@ CREATE TABLE gix_nf (
     rentabilidadeTotal VARCHAR(255) NOT NULL,
     codigoPedido INT(11) NOT NULL,
     PRIMARY KEY (id),
-    FOREIGN KEY (empresaNotaCodigo) REFERENCES gix_nf_empresas(codigo),
-    FOREIGN KEY (empresaOrigemCodigo) REFERENCES gix_nf_empresas(codigo),
-    FOREIGN KEY (clienteCodigo) REFERENCES gix_nf_clientes(codigo),
-    FOREIGN KEY (vendedorCodigo) REFERENCES gix_nf_vendedores(codigo)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+    FOREIGN KEY (empresaNotaCodigo) REFERENCES gix_nf_empresas(codigo) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (empresaOrigemCodigo) REFERENCES gix_nf_empresas(codigo) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (clienteCodigo) REFERENCES gix_nf_clientes(codigo) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (vendedorCodigo) REFERENCES gix_nf_vendedores(codigo) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = latin1;
