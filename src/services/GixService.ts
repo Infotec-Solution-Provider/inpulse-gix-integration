@@ -71,10 +71,12 @@ class GixService {
     private async fetchCustomers(startDate: string, endDate: string, page: number) {
         const url = "/shx-integracao-servicos/clientes";
         const params = {
-            dataOcorrencia: startDate,
+            dataInicial: startDate,
             dataFinal: endDate,
             paginacao: page,
         };
+
+        console.log(params);
 
         let attempts = 0;
         const maxAttempts = Number(process.env.MAX_ATTEMPTS || "3") || 3;
