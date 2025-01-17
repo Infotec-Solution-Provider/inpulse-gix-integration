@@ -1,3 +1,3 @@
 import ImportGixRawData from "./routines/ImportGixRawData";
 
-ImportGixRawData.runRoutine("notas");
+ImportGixRawData.runRoutine({ clientes: false, notas: true });

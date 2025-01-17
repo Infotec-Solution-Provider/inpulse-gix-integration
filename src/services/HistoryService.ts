@@ -1,45 +1,35 @@
-import path from "path";
-import { existsSync, readFileSync, writeFileSync } from "fs";
+import * as dotenv from 'dotenv';
+import DatabaseService from "./DatabaseService";
+import { Pool, RowDataPacket } from "mysql2/promise";
+import { ImportedDay } from '../types/ImportedDay';
 
 class HistoryService {
-    private importedCustomersFilePath = path.join(__dirname, 'importedCustomers.json');
-    private importedInvoicesFilePath = path.join(__dirname, 'importedInvoices.json');
-    private importedCustomers: Set<string>;
-    private importedInvoices: Set<string>;
+    private pool: Pool;
 
-    constructor() {
-        this.importedCustomers = this.loadImportedDays(this.importedCustomersFilePath);
-        this.importedInvoices = this.loadImportedDays(this.importedInvoicesFilePath);
+    constructor(dbService: typeof DatabaseService) {
+        dotenv.config();
+
+        this.pool = dbService.pool;
     }
 
-    private loadImportedDays(filePath: string): Set<string> {
-        if (existsSync(filePath)) {
-            const data = readFileSync(filePath, 'utf8');
-            return new Set(JSON.parse(data));
-        }
-        return new Set();
+    public async addImportedDay(type: ImportedDay["tipo"], date: string, error?: string | null) {
+        const query = "INSERT INTO gix_dias_importados (tipo, data, erro) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE erro = VALUES(erro);"
+        const values = [type, date, error || null];
+
+        await this.pool.query(query, values);
     }
 
-    public saveImportedDays(type: "clientes" | "notas") {
-        writeFileSync(
-            type === "clientes" ? this.importedCustomersFilePath : this.importedInvoicesFilePath,
-            JSON.stringify(Array.from(type === "clientes" ? this.importedCustomers : this.importedInvoices))
-        );
-    }
+    public async checkIfDayIsImported(type: ImportedDay["tipo"], date: string) {
+        const query = "SELECT * FROM gix_dias_importados WHERE tipo = ? AND data = ? AND erro IS NULL";
+        const values = [type, date];
 
-    public addImportedDay(type: "clientes" | "notas", day: string) {
-        if (type === "clientes") {
-            this.importedCustomers.add(day);
-        }
+        const [rows] = await this.pool.query<RowDataPacket[]>(query, values);
 
-        if (type === "notas") {
-            this.importedInvoices.add(day);;
-        }
-    }
+        if (rows.length === 0) return false;
+        if ((rows[0] as ImportedDay).erro !== null) return false;
 
-    public getImportedDays(type: "clientes" | "notas"): Set<string> {
-        return type === "clientes" ? this.importedCustomers : this.importedInvoices;
+        return true;
     }
 }
 
-export default new HistoryService;
+export default new HistoryService(DatabaseService);

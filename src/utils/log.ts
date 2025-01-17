@@ -13,7 +13,8 @@ class Log {
     public static error(message: string, error?: any) {
         const now = new Date();
         console.error(`${now.toLocaleString()} [Error] ${message}`);
-        if (error && process.env.NODE_ENV === 'development') {
+
+        if (error) {
             console.error(error);
         }
     }

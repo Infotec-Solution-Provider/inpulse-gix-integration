@@ -36,7 +36,9 @@ class GixService {
         );
     }
 
-    private async fetchInvoices(startDate: string, endDate: string, page: number): Promise<GixInvoiceResponse> {
+    private async fetchInvoices(startDate: string, endDate: string, page: number): Promise<GixInvoiceResponse | Error> {
+        dotenv.config();
+
         const url = "/shx-integracao-servicos/notas";
         const body = {
             dataInicial: startDate,
@@ -45,30 +47,23 @@ class GixService {
             incluirCanceladas: "NAO"
         };
 
-        let attempts = 0;
-        const maxAttempts = Number(process.env.MAX_ATTEMPTS || "3") || 3;
+        try {
+            Log.info(`Buscando faturas da página ${page}...`);
+            const data = (await this.api.post<GixInvoiceResponse>(url, body)).data;
+            data.content = data.content.filter(invoice => this.cnpjs.includes(invoice.empresaNota.cnpj) || this.cnpjs.includes(invoice.empresaOrigem.cnpj));
+            Log.info(data.content.length > 0 ? `${data.content.length} faturas encontradas!` : 'Nenhuma fatura encontrada...');
 
-        while (attempts < maxAttempts) {
-            try {
-                Log.info(`Buscando faturas da página ${page}...`);
-                const data = (await this.api.post<GixInvoiceResponse>(url, body)).data;
-                data.content = data.content.filter(invoice => this.cnpjs.includes(invoice.empresaNota.cnpj) || this.cnpjs.includes(invoice.empresaOrigem.cnpj));
-                Log.info(data.content.length > 0 ? `${data.content.length} faturas encontradas!` : 'Nenhuma fatura encontrada...');
+            return data;
+        } catch (error: any) {
+            Log.error(`Erro ao buscar faturas da página ${page}`);
 
-                return data;
-            } catch (error: any) {
-                attempts++;
-                Log.error(`Erro ao buscar faturas (tentativa ${attempts} de ${maxAttempts}): ${error.message}`);
-                if (attempts >= maxAttempts) {
-                    throw error;
-                }
-            }
+            return new Error(error.message);
         }
-
-        throw new Error('Falha ao buscar faturas após várias tentativas.');
     }
 
-    private async fetchCustomers(startDate: string, endDate: string, page: number) {
+    private async fetchCustomers(startDate: string, endDate: string, page: number): Promise<GixCustomer[] | Error> {
+        dotenv.config();
+
         const url = "/shx-integracao-servicos/clientes";
         const params = {
             dataInicial: startDate,
@@ -76,56 +71,58 @@ class GixService {
             paginacao: page,
         };
 
-        console.log(params);
+        try {
+            Log.info(`Buscando clientes da página ${page}...`);
+            const data = (await this.api.get<Array<GixCustomer>>(url, { params })).data;
+            Log.info(data.length > 0 ? `${data.length} clientes encontrados!` : 'Nenhum cliente encontrado...');
 
-        let attempts = 0;
-        const maxAttempts = Number(process.env.MAX_ATTEMPTS || "3") || 3;
+            return data;
+        } catch (error: any) {
+            Log.error(`Erro ao buscar clientes da página ${page}`);
 
-        while (attempts < maxAttempts) {
-            try {
-                Log.info(`Buscando clientes da página ${page}...`);
-                const data = (await this.api.get<Array<GixCustomer>>(url, { params })).data;
-                Log.info(data.length > 0 ? `${data.length} clientes encontrados!` : 'Nenhum cliente encontrado...');
-
-                return data;
-            } catch (error: any) {
-                attempts++;
-                Log.error(`Erro ao buscar clientes (tentativa ${attempts} de ${maxAttempts}): ${error.message}`);
-                if (attempts >= maxAttempts) {
-                    throw error;
-                }
-            }
+            return new Error(error.message);
         }
-
-        throw new Error('Falha ao buscar faturas após várias tentativas.');
     }
 
     public async forInvoices(startDate: GixDate, endDate: GixDate, callback: (invoice: GixInvoice) => Promise<void>) {
         let page = 1;
         let data = await this.fetchInvoices(startDate.toGixString(), endDate.toGixString(), page);
+        let lastPage = false;
+        let errCount = 0;
 
-        while (data.lastPage === false) {
-            for (let i = 0; i < data.content.length; i++) {
-                await callback(data.content[i]);
+        while (lastPage === false) {
+            if (!(data instanceof Error)) {
+                for (let i = 0; i < data.content.length; i++) {
+                    await callback(data.content[i]);
+                }
             }
 
             page++;
-
             data = await this.fetchInvoices(startDate.toGixString(), endDate.toGixString(), page);
+            lastPage = !(data instanceof Error) ? data.lastPage : false;
+
+            if (data instanceof Error) errCount++;
+            if (errCount >= 2) throw data;
         }
     }
 
     public async forCustomers(startDate: GixDate, endDate: GixDate, callback: (customer: GixCustomer) => Promise<void>) {
         let page = 1;
         let data = await this.fetchCustomers(startDate.toGixString(), endDate.toGixString(), page);
+        let errCount = 0;
 
-        while (data.length > 0) {
-            for (let i = 0; i < data.length; i++) {
-                await callback(data[i]);
+        while (data instanceof Error || data.length > 0) {
+            if (!(data instanceof Error)) {
+                for (let i = 0; i < data.length; i++) {
+                    await callback(data[i]);
+                }
             }
 
             page++;
             data = await this.fetchCustomers(startDate.toGixString(), endDate.toGixString(), page);
+
+            if (data instanceof Error) errCount++;
+            if (errCount >= 2) throw data;
         }
     }
 }

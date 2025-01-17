@@ -5,64 +5,60 @@ import GixDate from "../utils/gix-date";
 import * as dotenv from 'dotenv';
 import HistoryService from "../services/HistoryService";
 
-dotenv.config();
-
 class ImportGixRawData {
-    private async customersFrom(startDate: GixDate, endDate: GixDate) {
-        try {
-            Log.info(`Importando clientes do periodo: ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}...`);
+    private readonly historyService: typeof HistoryService;
 
-            await GixService.forCustomers(startDate, endDate, async (customer) => await InpulseService.saveGixCustomer(customer));
-            HistoryService.addImportedDay("clientes", startDate.toGixString());
-        } catch (error: any) {
-            Log.error(`Falha ao importar os clientes do periodo: ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()} | ${error?.message}`, error);
-        }
+    constructor(historyService: typeof HistoryService) {
+        this.historyService = historyService;
+
+        dotenv.config();
     }
 
-    private async invoicesFrom(startDate: GixDate, endDate: GixDate) {
-        try {
-            Log.info(`Importando faturas do periodo: ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}...`);
+    public async runRoutine({ clientes, notas }: { clientes: boolean, notas: boolean }) {
+        if (!clientes && !notas) return;
 
-            await GixService.forInvoices(startDate, endDate, async (invoice) => await InpulseService.saveGixInvoice(invoice));
-            HistoryService.addImportedDay("notas", startDate.toGixString());
-        } catch (error: any) {
-            Log.error(`Falha ao importar as faturas do periodo: ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()} | ${error?.message}`, error);
-        }
-    }
-
-    public async runRoutine(type: "clientes" | "notas") {
         const importDaysInterval = Number(process.env.IMPORT_DAYS_INTERVAL || "1");
         const today = new Date();
         const ONE_DAY = 24 * 60 * 60 * 1000;
+        const importTypeText = clientes && notas ? "clientes e notas" : clientes ? "clientes" : "notas";
 
-        Log.info(`Iniciando importação de ${type}...`);
-        Log.debug(`IMPORT_DAYS_INTERVAL: ${importDaysInterval}`);
-        Log.debug(`Data de hoje: ${today.toLocaleDateString()}`);
+        Log.info(`Iniciando importação de ${importTypeText}...`);
 
         for (let i = importDaysInterval; i >= 1; i--) {
-            Log.debug(`Processando dia ${i} de ${importDaysInterval}...`);
             const from = new GixDate(new Date(today.getTime() - (i * ONE_DAY)));
             const to = new GixDate(new Date(today.getTime() - ((i - 1) * ONE_DAY)));
 
-            Log.debug(`Processando período: ${from.toLocaleDateString()} - ${to.toLocaleDateString()}`);
+            Log.info(`Processando dia ${(i - importDaysInterval - 1) * -1} de ${importDaysInterval} (${from.toLocaleDateString()} - ${to.toLocaleDateString()})...`);
 
-            if (type === "clientes" && !HistoryService.getImportedDays("clientes").has(from.toGixString())) {
-                Log.debug(`Importando clientes para o dia: ${from.toGixString()}`);
-                await this.customersFrom(from, to);
-            } else if (type === "clientes") {
-                Log.debug(`Clientes já importados para o dia: ${from.toGixString()}`);
+            if (clientes) {
+                await this.historyService.checkIfDayIsImported("clientes", from.toGixString())
+                    .then(async isImported => {
+                        if (!isImported) {
+                            await GixService.forCustomers(from, to, async (customer) => await InpulseService.saveGixCustomer(customer))
+                                .then(async _ => await this.historyService.addImportedDay("clientes", from.toGixString()))
+                                .catch(async err => await this.historyService.addImportedDay("clientes", from.toGixString(), err.message));
+                        } else {
+                            Log.info(`Os clientes deste período já foram importados.`);
+                        }
+                    });
             }
 
-            if (type === "notas" && !HistoryService.getImportedDays("notas").has(from.toGixString())) {
-                Log.debug(`Importando faturas para o dia: ${from.toGixString()}`);
-                await this.invoicesFrom(from, to);
-            } else if (type === "notas") {
-                Log.debug(`Faturas já importadas para o dia: ${from.toGixString()}`);
+            if (notas) {
+                await this.historyService.checkIfDayIsImported("notas", from.toGixString())
+                    .then(async isImported => {
+                        if (!isImported) {
+                            await GixService.forInvoices(from, to, async (invoice) => await InpulseService.saveGixInvoice(invoice))
+                                .then(async _ => await this.historyService.addImportedDay("notas", from.toGixString()))
+                                .catch(async err => await this.historyService.addImportedDay("notas", from.toGixString(), err.message));
+                        } else {
+                            Log.debug(`As notas deste período já foram importadas.`);
+                        }
+                    });
             }
         }
 
-        Log.info(`Importação de ${type} concluída.`);
+        Log.info(`Importação de ${importTypeText} concluída.`);
     }
 }
 
-export default new ImportGixRawData();
+export default new ImportGixRawData(HistoryService);

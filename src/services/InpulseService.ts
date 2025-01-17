@@ -3,19 +3,13 @@ import { createPool, Pool, RowDataPacket } from "mysql2/promise";
 import { GixCustomer } from '../types/GixCustomer';
 import { GixInvoice } from '../types/GixInvoice';
 import Log from '../utils/log';
+import DatabaseService from './DatabaseService';
 
 class InpulseService {
     private pool: Pool;
 
-    constructor() {
-        dotenv.config();
-
-        this.pool = createPool({
-            host: process.env.INPULSE_DB_HOST,
-            user: process.env.INPULSE_DB_USER,
-            password: process.env.INPULSE_DB_PASSWORD,
-            database: process.env.INPULSE_DB_NAME
-        });
+    constructor(dbService: typeof DatabaseService) {
+        this.pool = dbService.pool;
     }
 
     public async getCustomerByErpId(erpId: string) {
@@ -160,14 +154,15 @@ class InpulseService {
         ]);
     }
 
-    private async saveGixInvoiceProducts(connection: any, products: any[]) {
+    private async saveGixInvoiceProducts(connection: any, invoiceNumber: string, products: any[]) {
         if (!products || products.length === 0) return;
         const productQuery = `
-            INSERT INTO gix_nf_produtos (codigoBarras, codigoInterno, codigoFabrica, codigoReferencia, descricao, precoUnitario, unidadeMedida, quantidade, descontoTotal, valorLiquido, valorIpi, valorST, valorFrete, valorSeguro, valorOutras, valorTotal, categoria, fabricante, marca, tipo, subtipo, subtipoDescricao, linha, linhaDescricao, familia, familiaDescricao, cor, corDescricao, exclusivoCd, situacao, fornecedor, operacao)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO gix_nf_produtos (numeroNf, codigoBarras, codigoInterno, codigoFabrica, codigoReferencia, descricao, precoUnitario, unidadeMedida, quantidade, descontoTotal, valorLiquido, valorIpi, valorST, valorFrete, valorSeguro, valorOutras, valorTotal, categoria, fabricante, marca, tipo, subtipo, subtipoDescricao, linha, linhaDescricao, familia, familiaDescricao, cor, corDescricao, exclusivoCd, situacao, fornecedor, operacao)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         for (const product of products) {
             await connection.execute(productQuery, [
+                invoiceNumber,
                 product.codigoBarras || null,
                 product.codigoInterno || null,
                 product.codigoFabrica || null,
@@ -251,7 +246,7 @@ class InpulseService {
                 ]);
 
                 if (invoice.produtos && invoice.produtos.length > 0) {
-                    await this.saveGixInvoiceProducts(connection, invoice.produtos);
+                    await this.saveGixInvoiceProducts(connection, invoice.numeroNF, invoice.produtos);
                 }
 
                 await connection.commit();
@@ -264,9 +259,8 @@ class InpulseService {
             }
         } catch (error: any) {
             Log.error(`Falha ao salvar fatura numero: ${invoice.numeroNF} | ${error?.message}`, error);
-
         }
     }
 }
 
-export default new InpulseService();
+export default new InpulseService(DatabaseService);

@@ -1,8 +1,15 @@
+CREATE TABLE gix_dias_importados (
+    tipo ENUM('clientes', 'notas'),
+    data VARCHAR(10),
+    erro TEXT NULL,
+    PRIMARY KEY (tipo, data)
+) ENGINE = InnoDB DEFAULT CHARSET = latin1;
+
 CREATE TABLE gix_clientes (
     id INT(11),
     nome VARCHAR(255),
     cpfCnpj VARCHAR(255),
-    tipoPessoa ENUM('JURÍDICA', 'FÍSICA'),
+    tipoPessoa VARCHAR(255),
     telefone VARCHAR(255),
     celular VARCHAR(255),
     cep VARCHAR(20),
@@ -19,13 +26,6 @@ CREATE TABLE gix_clientes (
     tipoClienteCodigo VARCHAR(255),
     tipoClienteDescricao VARCHAR(255),
     PRIMARY KEY (id)
-) ENGINE = InnoDB DEFAULT CHARSET = latin1;
-
-CREATE TABLE gix_nf_empresas (
-    codigo INT(11),
-    nome VARCHAR(255),
-    cnpj VARCHAR(255),
-    PRIMARY KEY (codigo)
 ) ENGINE = InnoDB DEFAULT CHARSET = latin1;
 
 CREATE TABLE gix_nf_clientes (
@@ -53,23 +53,9 @@ CREATE TABLE gix_nf_clientes (
     PRIMARY KEY (codigo)
 ) ENGINE = InnoDB DEFAULT CHARSET = latin1;
 
-CREATE TABLE gix_nf_participantes (
-    id INT(11) AUTO_INCREMENT,
-    tipoPessoa VARCHAR(255),
-    cnpjCpf VARCHAR(255),
-    cnpjCpfCliente VARCHAR(255),
-    nome VARCHAR(255),
-    telefone VARCHAR(255),
-    celular VARCHAR(255),
-    email VARCHAR(255),
-    sexo VARCHAR(10),
-    tipoParticipanteCodigo VARCHAR(255),
-    tipoParticipanteDescricao VARCHAR(255),
-    PRIMARY KEY (id)
-) ENGINE = InnoDB DEFAULT CHARSET = latin1;
-
 CREATE TABLE gix_nf_produtos (
     id INT(11) AUTO_INCREMENT,
+    numeroNf VARCHAR(255),
     codigoBarras VARCHAR(255),
     codigoInterno VARCHAR(255),
     codigoFabrica VARCHAR(255),
