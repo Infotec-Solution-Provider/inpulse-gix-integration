@@ -55,6 +55,7 @@ CREATE TABLE gix_nf_clientes (
 
 CREATE TABLE gix_nf_produtos (
     id INT(11) AUTO_INCREMENT,
+    idNf INT(11),
     numeroNf VARCHAR(255),
     codigoBarras VARCHAR(255),
     codigoInterno VARCHAR(255),
@@ -105,6 +106,8 @@ CREATE TABLE gix_nf_vendedores (
 
 CREATE TABLE gix_nf (
     id INT(11) AUTO_INCREMENT,
+    empresaNota VARCHAR(50),
+    empresaOrigem VARCHAR(50),
     empresaNotaCodigo INT(11),
     empresaOrigemCodigo INT(11),
     clienteCodigo INT(11),
