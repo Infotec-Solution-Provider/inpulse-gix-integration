@@ -1,5 +1,4 @@
-import * as dotenv from 'dotenv';
-import { createPool, Pool, ResultSetHeader, RowDataPacket } from "mysql2/promise";
+import { Pool, ResultSetHeader, RowDataPacket } from "mysql2/promise";
 import { GixCustomer } from '../types/GixCustomer';
 import { GixInvoice } from '../types/GixInvoice';
 import Log from '../utils/log';
