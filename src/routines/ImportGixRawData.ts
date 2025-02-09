@@ -26,15 +26,14 @@ class ImportGixRawData {
 
         for (let i = importDaysInterval; i >= 1; i--) {
             const from = new GixDate(new Date(today.getTime() - (i * ONE_DAY)));
-            const to = new GixDate(new Date(today.getTime() - ((i - 1) * ONE_DAY)));
 
-            Log.info(`Processando dia ${(i - importDaysInterval - 1) * -1} de ${importDaysInterval} (${from.toLocaleDateString()} - ${to.toLocaleDateString()})...`);
+            Log.info(`Processando dia ${(i - importDaysInterval - 1) * -1} de ${importDaysInterval} (${from.toLocaleDateString()}...`);
 
             if (clientes) {
                 await this.historyService.checkIfDayIsImported("clientes", from.toGixString())
                     .then(async isImported => {
                         if (!isImported) {
-                            await GixService.forCustomers(from, to, async (customer) => await InpulseService.saveGixCustomer(customer))
+                            await GixService.forCustomers(from, async (customer) => await InpulseService.saveGixCustomer(customer))
                                 .then(async _ => await this.historyService.addImportedDay("clientes", from.toGixString()))
                                 .catch(async err => await this.historyService.addImportedDay("clientes", from.toGixString(), err.message));
                         } else {
@@ -47,11 +46,11 @@ class ImportGixRawData {
                 await this.historyService.checkIfDayIsImported("notas", from.toGixString())
                     .then(async isImported => {
                         if (!isImported) {
-                            await GixService.forInvoices(from, to, async (invoice) => await InpulseService.saveGixInvoice(invoice))
+                            await GixService.forInvoices(from, async (invoice) => await InpulseService.saveGixInvoice(invoice))
                                 .then(async _ => await this.historyService.addImportedDay("notas", from.toGixString()))
                                 .catch(async err => await this.historyService.addImportedDay("notas", from.toGixString(), err.message));
                         } else {
-                            Log.debug(`As notas deste período já foram importadas.`);
+                            Log.info(`As notas deste período já foram importadas.`);
                         }
                     });
             }

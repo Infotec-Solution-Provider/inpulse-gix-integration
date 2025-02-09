@@ -36,13 +36,13 @@ class GixService {
         );
     }
 
-    private async fetchInvoices(startDate: string, endDate: string, page: number): Promise<GixInvoiceResponse | Error> {
+    private async fetchInvoices(date: string, page: number): Promise<GixInvoiceResponse | Error> {
         dotenv.config();
 
         const url = "/shx-integracao-servicos/notas";
         const body = {
-            dataInicial: startDate,
-            dataFinal: endDate,
+            dataInicial: date,
+            dataFinal: date,
             paginacao: page,
             incluirCanceladas: "NAO"
         };
@@ -61,13 +61,13 @@ class GixService {
         }
     }
 
-    private async fetchCustomers(startDate: string, endDate: string, page: number): Promise<GixCustomer[] | Error> {
+    private async fetchCustomers(date: string, page: number): Promise<GixCustomer[] | Error> {
         dotenv.config();
 
         const url = "/shx-integracao-servicos/clientes";
         const params = {
-            dataInicial: startDate,
-            dataFinal: endDate,
+            dataInicial: date,
+            dataFinal: date,
             paginacao: page,
         };
 
@@ -84,9 +84,9 @@ class GixService {
         }
     }
 
-    public async forInvoices(startDate: GixDate, endDate: GixDate, callback: (invoice: GixInvoice) => Promise<void>) {
+    public async forInvoices(date: GixDate, callback: (invoice: GixInvoice) => Promise<void>) {
         let page = 1;
-        let data = await this.fetchInvoices(startDate.toGixString(), endDate.toGixString(), page);
+        let data = await this.fetchInvoices(date.toGixString(), page);
         let lastPage = false;
         let errCount = 0;
 
@@ -98,7 +98,7 @@ class GixService {
             }
 
             page++;
-            data = await this.fetchInvoices(startDate.toGixString(), endDate.toGixString(), page);
+            data = await this.fetchInvoices(date.toGixString(), page);
             lastPage = !(data instanceof Error) ? data.lastPage : false;
 
             if (data instanceof Error) errCount++;
@@ -106,9 +106,9 @@ class GixService {
         }
     }
 
-    public async forCustomers(startDate: GixDate, endDate: GixDate, callback: (customer: GixCustomer) => Promise<void>) {
+    public async forCustomers(date: GixDate, callback: (customer: GixCustomer) => Promise<void>) {
         let page = 1;
-        let data = await this.fetchCustomers(startDate.toGixString(), endDate.toGixString(), page);
+        let data = await this.fetchCustomers(date.toGixString(), page);
         let errCount = 0;
 
         while (data instanceof Error || data.length > 0) {
@@ -119,7 +119,7 @@ class GixService {
             }
 
             page++;
-            data = await this.fetchCustomers(startDate.toGixString(), endDate.toGixString(), page);
+            data = await this.fetchCustomers(date.toGixString(), page);
 
             if (data instanceof Error) errCount++;
             if (errCount >= 2) throw data;

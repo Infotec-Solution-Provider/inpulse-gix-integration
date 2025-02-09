@@ -1,5 +1,5 @@
 import * as dotenv from 'dotenv';
-import { createPool, Pool, RowDataPacket } from "mysql2/promise";
+import { createPool, Pool, ResultSetHeader, RowDataPacket } from "mysql2/promise";
 import { GixCustomer } from '../types/GixCustomer';
 import { GixInvoice } from '../types/GixInvoice';
 import Log from '../utils/log';
@@ -154,14 +154,15 @@ class InpulseService {
         ]);
     }
 
-    private async saveGixInvoiceProducts(connection: any, invoiceNumber: string, products: any[]) {
+    private async saveGixInvoiceProducts(connection: any, invoiceId: number, invoiceNumber: string, products: any[]) {
         if (!products || products.length === 0) return;
         const productQuery = `
-            INSERT INTO gix_nf_produtos (numeroNf, codigoBarras, codigoInterno, codigoFabrica, codigoReferencia, descricao, precoUnitario, unidadeMedida, quantidade, descontoTotal, valorLiquido, valorIpi, valorST, valorFrete, valorSeguro, valorOutras, valorTotal, categoria, fabricante, marca, tipo, subtipo, subtipoDescricao, linha, linhaDescricao, familia, familiaDescricao, cor, corDescricao, exclusivoCd, situacao, fornecedor, operacao)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO gix_nf_produtos (idNf, numeroNf, codigoBarras, codigoInterno, codigoFabrica, codigoReferencia, descricao, precoUnitario, unidadeMedida, quantidade, descontoTotal, valorLiquido, valorIpi, valorST, valorFrete, valorSeguro, valorOutras, valorTotal, categoria, fabricante, marca, tipo, subtipo, subtipoDescricao, linha, linhaDescricao, familia, familiaDescricao, cor, corDescricao, exclusivoCd, situacao, fornecedor, operacao)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         for (const product of products) {
             await connection.execute(productQuery, [
+                invoiceId,
                 invoiceNumber,
                 product.codigoBarras || null,
                 product.codigoInterno || null,
@@ -214,11 +215,11 @@ class InpulseService {
                 }
 
                 const invoiceQuery = `
-                    INSERT INTO gix_nf (empresaNotaCodigo, empresaOrigemCodigo, clienteCodigo, vendedorCodigo, data, hora, numeroNF, serieNF, condicaoPagamento, descricaoCondicaoPagamento, cartoes, chaveNFE, tipoNota, valorProdutos, valorDesconto, valorIPI, valorST, valorFrete, valorOutras, valorSeguro, numeroItens, formaDePagamento, rentabilidadeTotal, codigoPedido)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO gix_nf (empresaNotaCodigo, empresaOrigemCodigo, clienteCodigo, vendedorCodigo, data, hora, numeroNF, serieNF, condicaoPagamento, descricaoCondicaoPagamento, cartoes, chaveNFE, tipoNota, valorProdutos, valorDesconto, valorIPI, valorST, valorFrete, valorOutras, valorSeguro, numeroItens, formaDePagamento, rentabilidadeTotal, codigoPedido, empresaNota, empresaOrigem)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `;
 
-                await connection.execute(invoiceQuery, [
+                const [result]: [ResultSetHeader, unknown] = await connection.execute(invoiceQuery, [
                     invoice.empresaNota?.codigo || null,
                     invoice.empresaOrigem?.codigo || null,
                     invoice.cliente?.codigo || null,
@@ -242,11 +243,13 @@ class InpulseService {
                     invoice.numeroItens || null,
                     invoice.formaDePagamento || null,
                     invoice.rentabilidadeTotal || null,
-                    invoice.codigoPedido || null
+                    invoice.codigoPedido || null,
+                    invoice.empresaNota.cnpj,
+                    invoice.empresaOrigem.cnpj
                 ]);
 
                 if (invoice.produtos && invoice.produtos.length > 0) {
-                    await this.saveGixInvoiceProducts(connection, invoice.numeroNF, invoice.produtos);
+                    await this.saveGixInvoiceProducts(connection, result.insertId, invoice.numeroNF, invoice.produtos);
                 }
 
                 await connection.commit();
